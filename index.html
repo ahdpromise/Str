@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Stations in Cologne</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input, button { margin: 10px 0; padding: 10px; font-size: 16px; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #f4f4f4; margin: 5px 0; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>Gas Stations in Cologne</h1>
+
+    <input type="text" id="search" placeholder="Search by street name..." oninput="filterStations()">
+    <button onclick="toggleSort()">Sort Alphabetically</button>
+
+    <ul id="station-list">Loading data...</ul>
+
+    <script>
+        let stations = [];
+        let sortOrder = "asc";
+
+        // Fetch data from API
+        async function fetchData() {
+            const API_URL = "https://www.offenedaten-koeln.de/api/3/action/datastore_search?resource_id=47c3afdc-5b6b-42fd-a9d1-d27e44ff3d81";
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                stations = data.result.records.map(item => ({
+                    address: item["Adresse"],
+                    longitude: item["Longitude"],
+                    latitude: item["Latitude"]
+                }));
+                renderStations();
+            } catch (error) {
+                document.getElementById("station-list").innerHTML = "Error loading data!";
+            }
+        }
+
+        // Render station list
+        function renderStations() {
+            const list = document.getElementById("station-list");
+            list.innerHTML = "";
+            let filtered = stations.filter(station =>
+                station.address.toLowerCase().includes(document.getElementById("search").value.toLowerCase())
+            );
+            if (sortOrder === "asc") {
+                filtered.sort((a, b) => a.address.localeCompare(b.address));
+            } else {
+                filtered.sort((a, b) => b.address.localeCompare(a.address));
+            }
+            filtered.forEach(station => {
+                const li = document.createElement("li");
+                li.innerHTML = `<strong>${station.address}</strong><br>Coordinates: ${station.latitude}, ${station.longitude}`;
+                list.appendChild(li);
+            });
+        }
+
+        // Filter stations based on search input
+        function filterStations() {
+            renderStations();
+        }
+
+        // Toggle sorting order
+        function toggleSort() {
+            sortOrder = sortOrder === "asc" ? "desc" : "asc";
+            renderStations();
+        }
+
+        // Load data on page load
+        fetchData();
+    </script>
+
+</body>
+</html>
